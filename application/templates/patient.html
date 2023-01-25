@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>chat room</title>
+
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
+    
+</head>
+<body>
+
+<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+    const room = "{{ROOM_DETAILS['ROOM_ID']}}"
+    const USER = "{{ROOM_DETAILS['USER_NAME']}}"
+
+    console.log(room)
+    console.log(USER)
+
+    $(document).ready(function(){
+
+        var socket = io.connect('/');
+
+        socket.on('connect',function(){
+            socket.emit('newUser',{'username':USER,'roomNumber':room});
+        });
+
+        socket.on('message' , function(newJson) {
+            $("#messages").append('<li><b> ' +newJson.sender +': </b> '+newJson.msg+ ' </li> ');
+            console.log(' Received message');
+        });
+
+        $('#sendbutton').on('click', function() {
+            var newmsg = $('#myMessage').val();
+            socket.emit('message',{'msg':newmsg,'room':room});
+        });
+
+        $('#sendbutton2').on('click', function(){
+            socket.emit('privateChat',{'msg':$('#myMessage').val(),'target':$('#targetName').val()});
+        });
+
+        var medio= io('/medsock');
+
+        $('#sendbutton3').on('click', function() {
+            var meddata = {"med":$('#medName').val(), "quantity":$('#medQuentity').val()};
+            console.log(meddata);
+            medio.emit('medicines',meddata);
+        });
+
+        medio.on('showMed', function(medJson){
+            $("#medList").append('<li><i> ' +medJson.med +' : </i> '+medJson.quantity+ ' </li> ');
+            console.log('medJson');
+        });
+
+        var arduino_res= io('/arduino_response');
+
+        arduino_res.on('connect',function(){
+            arduino_res.emit('join_arduino_room',room);
+        });
+
+            var arduino =io('http://localhost:3010/arduino');
+
+            arduino.on('connect',function(){
+                console.log('connected to arduino...!')
+                arduino.emit('get_arduino_data','Please send data')
+            });
+
+            arduino.on('put_arduino_data',function(arduino_data){
+
+                arduino_data['roomId'] = room;
+                console.log(arduino_data)
+                arduino_res.emit('arduino_to_server',arduino_data);
+
+            });
+
+        arduino_res.on('put_arduino',function(arduino_data){
+                $('#heart-rate').html("heart-rate: " + arduino_data['Heart rate']);
+                $('#humidity').html("humidity: " + arduino_data['Humidity']);
+                $('#temp').html('temperature: ' + arduino_data['Temperature']);
+        })
+
+    });
+</script>
+<h1>{{ROOM_DETAILS['USER_NAME']}}</h1>
+<ul id="messages">
+    {% for msg in messages %}
+        <li>{{msg}}</li>
+    {%endfor%}
+</ul>
+<input type= "text" id= "myMessage">
+</br>
+<div>
+    <input type= "text" id= "userName" placeholder="your name">
+    </br>
+    <button id="sendbutton">Send</button>
+</div>
+<div>
+    <input type= "text" id= "targetName" placeholder="target name">
+    </br>
+    <button id="sendbutton2">Send to target</button>
+</div>
+
+<div>
+    <input type= "text" id= "medName" placeholder="medicine name">
+    <input type= "text" id= "medQuentity" placeholder="med quantity">
+    </br>
+    <button id="sendbutton3">Send to target</button>
+</div>
+
+<!---
+
+client side arduino connection
+
+<script type="text/javascript">
+
+
+        $('#arduino-btn').on('click',function(){
+
+            var arduino =io('http://localhost:5000/arduino');
+
+            arduino.on('connect',function(){
+                console.log('connected to arduino...!')
+                arduino.emit('get_arduino_data','Please send data')
+            });
+
+            arduino.on('put_arduino_data',function(arduino_data){
+                arduino_data['roomId'] = room;
+                arduino_res.emit('arduino_to_server',arduino_data);
+
+            });
+
+
+        });
+
+</script>
+-->
+
+<button id="arduino-btn">set arduino</button>
+
+<div>
+    <ul>
+        <li id="heart-rate"></li>
+        <li id="humidity"></li>
+        <li id="temp"></li>
+    </ul>
+
+</div>
+
+
+
+<div>
+    <ul id="medList">
+
+    </ul>
+</div>
+
+
+
+
+
+
+
+</body>
+</html>

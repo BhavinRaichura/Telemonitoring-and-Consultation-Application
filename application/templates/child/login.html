@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   
+    <title>Login</title>
+    <style>
+        :root{
+            --dark-green : #267265;
+            --light-green : #98d4ca;
+            --white : rgb(245, 249, 248);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+        
+        .hero {
+            height: 100%;
+            width: 100%;
+            background-position: center;
+            background-size: cover;
+            position: absolute;
+        
+        }
+        
+        .form-box {
+            width: 380px;
+            height: 480px;
+            position: relative;
+            margin: 6% auto;
+            background-color: var(--white);
+            padding: 5px;
+            overflow: hidden;
+        
+        
+        
+        }
+        
+        .button-box {
+            width: 220px;
+            margin: 35px auto;
+            background-color:var(--dark-green);
+            position: relative;
+            box-shadow: 0 0 10px 2px var(--light-green);
+            border-radius: 30px;
+        }
+        
+        .toggle-btn {
+            padding: 10px 30px;
+            cursor: pointer;
+            background: transparent;
+            border: 0;
+            outline: none;
+            position: relative;
+            color: var(--white);
+        }
+        
+        #btn {
+            top: 0;
+            left: 0px;
+            position: absolute;
+            width: 110px;
+            height: 100%;
+            border-radius: 30px;
+            transition: .5s;
+            background-color: var(--light-green);
+        }
+        
+        
+        
+        .social-icons {
+            margin: 30px auto;
+            text-align: center;
+        }
+        
+        .social-icons img {
+            width: 30px;
+            margin: 0 12px;
+            box-shadow: 0 0 10px 0 #7f7f7f3d;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        
+        .input-group {
+            top: 180px;
+            position: absolute;
+            width: 280px;
+            transition: .5s;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 10px 0;
+            margin: 5px 0;
+            border-left: 0;
+            border-top: 0;
+            border-right: 0;
+            color: --var(dark-green);
+            outline: none;
+            background: transparent;
+        }
+        
+        .submit-btn {
+            width: 85%;
+            padding: 10px 30px;
+            cursor: pointer;
+            display: block;
+            margin: auto;
+            background-color: var(--dark-green);
+            color: #2f3640;
+            border: 0;
+            outline: none;
+            border-radius: 30px;
+            transition: 0.4s;
+            color:white;
+        
+        
+        }
+        
+        .chech-box {
+            margin: 30px 10px 30px 0;
+        }
+        
+        span {
+            color: #777;
+            font-size: 12px;
+            bottom: 68px;
+            position: absolute;
+        }
+        
+        #login {
+            left: 50px;
+        }
+        
+        #register {
+            left: 450px;
+        }
+        
+        h5 {
+            color: rgb(243, 243, 243);
+            position: absolute;
+            font-size: 10px;
+        }
+        
+        h5 a {
+            color: rgb(0, 160, 253);
+        }
+        
+        .submit-btn:hover {
+            background-color: var(--light-green);
+            border: 1px solid var(--dark-green);
+            color:white;
+
+        }
+
+       
+    </style>
+
+
+
+</head>
+
+<body>
+
+
+
+
+    <body>
+
+        <div class="hero">
+            <div class="form-box">
+
+                <div class="button-box">
+                    <div id="btn"></div>
+                    <button type="button" class="toggle-btn" onclick="login()">Log In</button>
+                    <button type="button" class="toggle-btn" onclick="register()">SIgn up</button>
+                </div>
+
+                <form id="login" class="input-group" action="{{url_for('login')}}" method="post">
+                    {{ login_form.hidden_tag() }}
+                    {{login_form.email}}
+                    {{login_form.password}}
+                    {{ login_form.submit() }}
+                </form>
+
+                <form id="register" class="input-group" action="{{url_for('signup')}}" method="post">
+                    {{ reg_form.hidden_tag() }}
+                    {{reg_form.username}}
+                    {{reg_form.email}}
+                    {{reg_form.password}}
+                    {{ reg_form.submit() }}
+                </form>
+            </div>
+
+        </div>
+
+        <script type="text/javascript">
+            var x = document.getElementById("login");
+            var y = document.getElementById("register");
+            var z = document.getElementById("btn");
+
+            function register() {
+                x.style.left = "-400px";
+                y.style.left = "50px";
+                z.style.left = "110px";
+            }
+
+            function login() {
+                x.style.left = "50px";
+                y.style.left = "450px";
+                z.style.left = "0";
+            }
+        </script>
+
+
+    </body>
+
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>chat room</title>
+
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+    <script src="https://cdn.plot.ly/plotly-2.14.0.min.js"></script>
+</head>
+<style >
+*{
+  padding:0px;
+  margin: 0px;
+  box-sizing: border-box;
+}
+
+body{
+  height: 100vh;
+  
+}
+#messages li{
+     list-style-type:none;
+    padding:3px;
+}
+
+#messages{
+    overflow-y: scroll;
+    height:300px;
+}
+
+.videopos{
+  position: fixed;
+}
+.chatpos{
+}
+.h{
+  height:400px;
+}
+
+#peervideo{
+  display: inline-block;
+  height: 95%;
+  width: 100%;
+  background-color: lightblue;
+}
+
+
+#myvideo{
+  display: inline-block;
+  height: 200px;
+  width: 200px;
+  position: absolute;
+  bottom: 55px;
+  right: 9px;
+  background-color: grey;
+}
+
+.btnn{
+  display:block;
+  margin: auto;
+}
+
+#firstchart,#secondchart,#thirdchart{
+  height: 100%;
+  width: 100%;
+  margin:0px;
+  overflow:hidden;
+  border-radius: 5px;
+}
+.chat{
+  background-color: lightgreen;
+  position: relative;
+}
+#myMessage{
+  width: 80%;
+  height: 8%;
+  border:1px solid black;
+  border-radius: 1px;
+  border-radius: 5px;
+  display: inline-block;
+  position: absolute;
+  bottom: 0px;
+}
+#sendbutton{
+  border: 1px solid black;
+  background-color: white;
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 20%;
+  display: inline-block;
+  right: 0px;
+}
+</style>
+<body>
+  <div class="container-fluid h-100 bg-light">
+    <div class="row h-100 ">
+      <div class="col-sm-8 bg-light p-3 h-100  sticky-top rounded position-relative">
+        <video id="peervideo" class="rounded" > </video>
+        <video  id="myvideo" class="position-absolute rounded m-2"> </video>
+        <div class="text-center">
+            <a href='/' class="btn btn-danger call-end" onclick="endCall()">End Call</a>
+        </div>
+      </div>
+      <div class="col-sm-4 h-100 overflow-scroll">
+        <div class="row h-50 mx-3 mt-3 rounded chat" id="chatbox">
+          <h1>{{ROOM_DETAILS['USER_NAME']}}</h1>
+          <ul id="messages">
+              {% for msg in messages %}
+                  <li>{{msg}}</li>
+              {%endfor%}
+          </ul> 
+          <input type= "text" id= "myMessage"></br>
+          <div><button id="sendbutton" class="btn">Send</button></div>      
+        </div>
+        <div class="row mx-3 my-3 bg-light rounded">
+          <div id="firstchart"></div>
+        </div>
+        <div class="row h-50 mx-3 my-3 bg-light rounded">
+          <div id="secondchart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+    const room = "{{ROOM_DETAILS['ROOM_ID']}}"
+    const USER = "{{ROOM_DETAILS['USER_NAME']}}"
+
+    console.log(room)
+    console.log(USER)
+    const values=[2,34,6,7];
+    $(document).ready(function(){
+
+        var socket = io.connect('/');
+
+        socket.on('connect',function(){
+            socket.emit('newUser',{'username':USER,'roomNumber':room});
+        });
+
+        socket.on('message' , function(newJson) {
+            if(newJson.sender === USER){
+                $("#messages").append('<li><span style="float:right;">'+newJson.msg+ ' </span></li> ');
+            }
+            else{
+                $("#messages").append('<li><span style="float:left;"><b>' +newJson.sender +': </b></br> '+newJson.msg+ ' </span></li> ');
+            }
+            console.log(' Received message');
+        });
+
+        $('#sendbutton').on('click', function() {
+            var newmsg = $('#myMessage').val();
+            $('#myMessage').val('');
+            socket.emit('message',{'msg':newmsg,'room':room});
+        });
+
+        $('#sendbutton2').on('click', function(){
+            socket.emit('privateChat',{'msg':$('#myMessage').val(),'target':$('#targetName').val()});
+        });
+
+        var medio= io('/medsock');
+
+        $('#sendbutton3').on('click', function() {
+            var meddata = {"med":$('#medName').val(), "quantity":$('#medQuentity').val()};
+            console.log(meddata);
+            medio.emit('medicines',meddata);
+        });
+
+        medio.on('showMed', function(medJson){
+            $("#medList").append('<li><i> ' +medJson.med +' : </i> '+medJson.quantity+ ' </li> ');
+            console.log('medJson');
+        });
+
+        var arduino_res= io('/arduino_response');
+
+        arduino_res.on('connect',function(){
+            arduino_res.emit('join_arduino_room',room);
+        });
+
+            var arduino =io('http://localhost:3010/arduino');
+
+            arduino.on('connect',function(){
+                console.log('connected to arduino...!')
+                arduino.emit('get_arduino_data','Please send data')
+            });
+
+            arduino.on('put_arduino_data',function(arduino_data){
+
+                arduino_data['roomId'] = room;
+                console.log(arduino_data)
+                arduino_res.emit('arduino_to_server',arduino_data);
+
+            });
+        arduino_res.on('put_arduino',function(arduino_data){
+            console.log("pushed now",parseInt(arduino_data['Temperature']));
+            if(arduino_data['Temperature']){
+                $('#temp').html('temperature: ' + values.push(parseInt(arduino_data['Temperature'],10)));
+                $('#temp').html("temperature: " + arduino_data['Temperature']);
+            }
+            
+            if (arduino_data['Heart rate']){
+                $('#heart-rate').html("heart-rate: " + values.push(parseInt(arduino_data['Heart rate'],10)));
+                $('#heart-rate').html("heart-rate: " + arduino_data['Heart rate']);
+            }
+            console.log("pushed in array ", values.length )
+        })
+
+    });
+
+
+    console.log(values);
+    // Peer ID
+    let peerID="{{ROOM_DETAILS['ROOM_ID']}}";
+
+    // Making a new peer server
+    let currentCall;
+    
+    let peer= new Peer("{% if ROOM_DETAILS['IS_ADMIN']==1 %}{{ROOM_DETAILS['PEER_ID']}}{%endif%}");
+  
+    peer.on('open',function(peerID){
+      console.log("My peer ID is "+peerID);
+      console.log(peerID);
+      console.log(peer);
+      callUser();
+    });
+
+    async function callUser(){
+      // peerID
+      // grabbing the camera and audio
+      const stream =await navigator.mediaDevices.getUserMedia({
+        video:true,
+        audio:true,
+      });
+
+      document.querySelector("#myvideo").srcObject=stream;
+      document.querySelector("#myvideo").play();
+      document.querySelector('#myvideo').volume = 0;
+
+      // make the call
+      const call=peer.call(peerID_N,stream);
+      call.on("stream",(stream)=>{
+        document.querySelector("#peervideo").srcObject=stream;
+        document.querySelector("#peervideo").play();
+      });
+      call.on("data",(stream)=>{
+        document.querySelector("#peervideo").srcObject=stream;
+      });
+      call.on("error",(err)=>{
+        console.log(err);
+      })
+      call.on('close',()=>{
+        endCall();
+      })
+      currentCall=call;
+    }
+
+    peer.on("call",(call)=>{
+      console.log("Call is coming");
+      if(confirm(`Accept call from ${call.peer}?`)){
+        // grab the camera nd mediaDevices
+        navigator.mediaDevices.getUserMedia({video:true,audio:true})
+        .then((stream)=>{
+          //play the local preview
+          document.querySelector("#myvideo").srcObject=stream;
+          document.querySelector("#myvideo").play();
+
+          // answer the callUser
+          call.answer(stream);
+
+          // save the close function
+          currentCall=call;
+
+          call.on("stream",(remoteStream)=>{
+            // when we recieve the remote stream, play import PropTypes from 'prop-types'
+            document.querySelector("#peervideo").srcObject=remoteStream;
+            document.querySelector("#peervideo").play();
+          });
+        })
+        .catch((err)=>{
+          console.log("Failed to get local stream:", err);
+        });
+      }else {
+        // user rejected the callUser
+        call.close();
+      }
+    });
+    $('#endcall').on('click', function() {
+      endCall();
+    });
+    function endCall(){
+      //makecall();
+      if(!currentCall)
+        return ;
+      try{
+        currentCall.close();
+      }catch{}
+      currentCall=undefined;
+    }
+
+    
+    {%if ROOM_DETAILS['IS_ADMIN']==0 %}
+      let peerID_N = "{{ROOM_DETAILS['PEER_ID']}}"
+      callUser()
+    {%endif%}
+    
+
+
+
+  // Making Graphs
+    
+    firstchart=document.getElementById("firstchart");
+
+    index=0;
+    index1=1;
+    function rand() {
+    // return values[index+3];
+      let ans=values[index];
+      index=index+2;
+      return ans;
+    }
+    console.log()
+    function rand1()
+    {
+      let ans=values[index1];
+      index1=index1+2;
+      return ans;
+    }
+  var time = new Date();
+
+  var data = [{
+    x: [time],
+    y: [rand],
+    mode: 'lines',
+    line: {color: '#80CAF6'}
+  }]
+
+  Plotly.newPlot('firstchart', data);
+  var cnt=0;
+  var interval = setInterval(function() {
+
+    var time = new Date();
+
+    var update = {
+    x:  [[time]],
+    y: [[rand()]]
+    }
+
+    var olderTime = time.setMinutes(time.getMinutes() - 1);
+    var futureTime = time.setMinutes(time.getMinutes() + 1);
+
+    var minuteView = {
+          xaxis: {
+            type: 'date',
+            range: [olderTime,futureTime]
+          }
+        };
+
+    Plotly.relayout('firstchart', minuteView);
+    Plotly.extendTraces('firstchart', update, [0])
+        if(++cnt === 100) 
+            clearInterval(interval);
+  }, 1000);
+
+
+  Plotly.newPlot('secondchart', data);
+
+  var interval = setInterval(function() {
+
+    var time = new Date();
+
+    var update = {
+    x:  [[time]],
+    y: [[rand1()]]
+    }
+
+    var olderTime = time.setMinutes(time.getMinutes() - 1);
+    var futureTime = time.setMinutes(time.getMinutes() + 1);
+
+    var minuteView = {
+          xaxis: {
+            type: 'date',
+            range: [olderTime,futureTime]
+          }
+        };
+
+    Plotly.relayout('secondchart', minuteView);
+    Plotly.extendTraces('secondchart', update, [0])
+    if(++cnt === 100) 
+    clearInterval(interval);
+  }, 1000);
+
+      // secondchart=document.getElementById("secondchart");
+      // Plotly.newPlot(secondchart,[{
+      //   x: [1, 2, 3, 4, 5],
+      //   y: [1, 2, 4, 8, 16] }], {
+      //   margin: { t: 0 } } );
+
+       // thirdchart=document.getElementById("thirdchart");
+       //  Plotly.newPlot(thirdchart,[{
+       //    x: [1, 2, 3, 4, 5],
+       //    y: [1, 2, 4, 8, 16] }], {
+       //    margin: { t: 0 } } );
+
+        
+        console.log(values);
+
+</script>
+
+<div>
+    <ul>
+        <li id="heart-rate"></li>
+        <li id="humidity"></li>
+        <li id="temp"></li>
+    </ul>
+</div> 
+
+</body>
+</html>
